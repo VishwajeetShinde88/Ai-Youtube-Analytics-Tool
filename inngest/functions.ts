@@ -41,6 +41,8 @@ export const GenerateAiThumbnail=inngest.createFunction(
 async({event,step})=>{
   const {userEmail,refImage,faceImage,userInput} =await event.data;
   //uploadd image to cloud /Imagekit
+  // await step.sleep("wait-a-moment","7s");
+  // return 'Success'
   const uploadImageUrls=await step.run(
     "UploadImage",
     async()=>{
@@ -81,16 +83,20 @@ async({event,step})=>{
              and add relavant icons, illustration or images as per title. UserInput`+userInput+'Only giive me text prompt, No other comment text'
             
           },
-          {
-            "type": "image_url",
-            "image_url": {
-              "url": uploadImageUrls??'',
-            }
-          }
-        ]
-      }
+          //@ts-ignore
+          ...(uploadImageUrls
+            ? [
+              {
+                type:"image_url",
+                image_url:{
+                  url:uploadImageUrls,
+                },
+              },
+            ]
+            :[])
+        ],  
+      },
     ],
-    
   });
   console.log(completion.choices[0].message);
   return completion.choices[0].message
@@ -137,6 +143,6 @@ return output.url();
   //Save record to database
 
 
-  return SaveToDB;
+  return uploadThumbnail;
 }
 )

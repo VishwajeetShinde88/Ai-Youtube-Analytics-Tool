@@ -18,17 +18,17 @@ import { usePathname } from 'next/navigation'
 const items = [
     {
         title: "Home",
-        url: "#",
+        url: "/dashboard",
         icon: HomeIcon,
     },
     {
         title: "Thumbnail Generator",
-        url: "#",
+        url: "/ai-thumbnail-generator",
         icon: ImageIcon,
     },
     {
         title: "Thumbnail Search",
-        url: "#",
+        url: "/thumbnail-search",
         icon: GalleryThumbnails,
     },
     {
