@@ -43,7 +43,7 @@ const items = [
     },
     {
         title: "Outlier",
-        url: "#",
+        url: "/outlier",
         icon: Gauge,
     },
     {

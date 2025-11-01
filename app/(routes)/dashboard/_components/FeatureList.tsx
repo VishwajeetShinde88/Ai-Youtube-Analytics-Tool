@@ -25,7 +25,7 @@ const Features=[{
     id:4,
     title:'Outlier',
     image:'/feature4.png',
-    path:'#'
+    path:'/outlier'
 },
 {
     id:6,
