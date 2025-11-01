@@ -1,86 +1,37 @@
-import { db } from "@/configs/db";
-import { AIThumbnailTable } from "@/configs/schema";
-import { inngest } from "@/inngest/client";
-import { currentUser } from "@clerk/nextjs/server";
-import { desc, eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
+import axios from "axios";
 
-/** Helper to convert a File to base64 */
-const getFileBufferData = async (file: File) => {
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  return {
-    name: file.name,
-    type: file.type,
-    size: file.size,
-    buffer: buffer.toString("base64"),
-  };
-};
-
-/** POST: Generate a new thumbnail via Inngest */
-export async function POST(req: NextRequest) {
-  try {
-    const user = await currentUser();
-    if (!user || !user.primaryEmailAddress?.emailAddress) {
-      return NextResponse.json(
-        { error: "User not authenticated or missing email" },
-        { status: 401 }
-      );
-    }
-
-    const formData = await req.formData();
-    const refImage = formData.get("refImage") as File | null;
-    const faceImage = formData.get("faceImage") as File | null;
-    const userInput = formData.get("userInput");
-
-    const inputData = {
-      userInput,
-      refImage: refImage ? await getFileBufferData(refImage) : null,
-      faceImage: faceImage ? await getFileBufferData(faceImage) : null,
-      userEmail: user.primaryEmailAddress.emailAddress,
-    };
-
-    // Trigger Inngest function
-    const result = await inngest.send({
-      name: "ai/generate-thumbnail",
-      data: inputData,
-    });
-
-    return NextResponse.json({ runId: result.ids[0] || null });
-  } catch (error: any) {
-    console.error("Error in /api/generate-thumbnail POST:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to generate thumbnail" },
-      { status: 500 }
-    );
-  }
-}
-
-/** GET: Fetch existing thumbnails for the current user */
 export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const query = searchParams.get("query");
+
+  if (!query) {
+    return NextResponse.json({ error: "Query is required" }, { status: 400 });
+  }
+
   try {
-    const user = await currentUser();
-    if (!user || !user.primaryEmailAddress?.emailAddress) {
-      return NextResponse.json(
-        { error: "User not authenticated or missing email" },
-        { status: 401 }
-      );
-    }
+    const result = await axios.get("https://www.googleapis.com/youtube/v3/search", {
+  params: {
+    part: "snippet",
+    q: query,
+    maxResults: 20,
+    type: "video", // ✅ add this
+    key: process.env.YOUTUBE_API_KEY,
+  },
+}); console.log(result.data)
 
-    const userEmail = user.primaryEmailAddress.emailAddress;
+    const videos = result.data.items.map((item: any) => ({
+      id: item.id.videoId,
+      title: item.snippet.title,
+      description: item.snippet.description,
+      thumbnail: item.snippet.thumbnails.medium.url,
+      channelTitle: item.snippet.channelTitle,
+      publishedAt: item.snippet.publishedAt,
+    }));
 
-    const result = await db
-      .select()
-      .from(AIThumbnailTable)
-      .where(eq(AIThumbnailTable.userEmail, userEmail)) // ✅ TypeScript-safe
-      .orderBy(desc(AIThumbnailTable.id));
-
-    return NextResponse.json(result, { status: 200 });
-  } catch (error: any) {
-    console.error("Error in /api/generate-thumbnail GET:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to fetch thumbnails" },
-      { status: 500 }
-    );
+    return NextResponse.json(videos);
+  } catch (error) {
+    console.error("Error fetching from YouTube API:", error);
+    return NextResponse.json({ error: "Failed to fetch videos" }, { status: 500 });
   }
 }

@@ -11,21 +11,19 @@ function DashboardProvider({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   useEffect(() => {
-    // Call the API when provider mounts
+    // Create or sync user when provider mounts
     const createNewUser = async () => {
       try {
         const userData = {
-          // fill with your user info
           email: "test@example.com",
           name: "Test User",
         };
 
         const result = await axios.post("/api/user", userData);
-        console.log("User synced:", result.data);
+        console.log("✅ User synced:", result.data);
       } catch (error) {
-        console.error("Error creating user:", error);
+        console.error("❌ Error creating user:", error);
       }
     };
 
