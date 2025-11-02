@@ -5,6 +5,8 @@ import axios from "axios";
 import { Loader2, Search } from "lucide-react";
 import React, { useState } from "react";
 import ThumbnailSearchList from "./_components/ThumbnailSearchList";
+import { Skeleton } from "@/components/ui/skeleton";
+import VideoListSkeleton from "@/app/_components/VideoListSkeleton";
 
 export type VideoInfo = {
   id: string;
@@ -67,17 +69,30 @@ function ThumbnailSearch() {
             className="w-full p-2 outline-none bg-transparent"
           />
           <Button onClick={onSearch} disabled={loading}>
-            {loading ? <Loader2 className="animate-spin" /> : <Search />}
+            {loading ? 
+           <Loader2 className="animate-spin" /> : <Search />}
             Search
           </Button>
         </div>
       </div>
 
-      {/* ✅ Pass the function properly here */}
-      <ThumbnailSearchList
-        videoList={videoList}
-        SearchSimilerThumbnail={(url:string)=>SearchSimilerThumbnail(url)}
-      />
+      
+
+<div>
+  {loading ? (
+    <div className="gird grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-5">
+      <VideoListSkeleton/>
+    </div>
+  ) : (
+    // ✅ Correctly render your component when not loading
+    <ThumbnailSearchList
+      videoList={videoList}
+      SearchSimilerThumbnail={(url: string) => SearchSimilerThumbnail(url)}
+    />
+  )}
+</div>
+
+
     </div>
   );
 }
