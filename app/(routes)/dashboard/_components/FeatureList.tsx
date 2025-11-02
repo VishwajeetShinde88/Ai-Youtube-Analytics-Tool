@@ -17,15 +17,15 @@ const Features=[{
 },
 {
     id:3,
-    title:'Content Generator',
+    title:'Outlier',
     image:'/feature3.png',
-    path:'#'
+    path:'/outlier'
 },
 {
     id:4,
-    title:'Outlier',
+    title:'Content Generator',
     image:'/feature4.png',
-    path:'/outlier'
+    path:'/ai-content-generator'
 },
 {
     id:6,

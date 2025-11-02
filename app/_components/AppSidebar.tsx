@@ -48,7 +48,7 @@ const items = [
     },
     {
         title: "AI Content Generator",
-        url: "#",
+        url: "/ai-content-generator",
         icon: Lightbulb,
     },
     {
