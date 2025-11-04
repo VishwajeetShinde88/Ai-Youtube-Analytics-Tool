@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import { inngest } from "./client";
 import Replicate from 'replicate';
 import ImageKit from 'imagekit';
-import { AIThumbnailTable } from '@/configs/schema';
+import { AiContentTable, AIThumbnailTable } from '@/configs/schema';
 import { db } from '@/configs/db';
 import moment from 'moment';
 
@@ -131,7 +131,7 @@ return output.url();
     const result=await db.insert(AIThumbnailTable).values({
       userInput:userInput,
       thumbnailUrl:uploadThumbnail,
-      createdOn:moment().format('yyyy-mm-DD'),
+      createdOn:moment().format('YYYY-MM-DD'),
       refImage:uploadImageUrls,
       userEmail:userEmail
     })
@@ -222,7 +222,7 @@ async({event,step})=>{
     //Generate AI Image
  const generateThumbnailImage=await step.run('Generate Image',async()=>{
   const input = {
-  prompt: generateAiContent?.image_prompts[0],
+  prompt: generateAiContent?.image_prompts[0].prompt,
   aspect_ratio: "16:9",
   output_format: "png",
   safety_filter_level: "block_only_high"
@@ -239,11 +239,23 @@ return output.url();
     const imageRef=await imageKit.upload({
       file:generateThumbnailImage,
       fileName:Date.now()+'.png',
+      isPublished:true,
       useUniqueFileName:false
     })
     return imageRef.url
   })
   //Save Everything to databse
-  return generateAiContent;
+  const SaveContentDB=await step.run('SaveToDb',async()=>{
+     const result =await db.insert(AiContentTable).values({
+      content:generateAiContent,
+      createdOn:moment().format('YYYY-MM-DD'),
+      thumbnailUrl:uploadThumbnail,
+      userEmail:userEmail,
+      userInput:userInput
+      //@ts-ignore
+     }).returning(AiContentTable);
+     return result
+  })
+  return SaveContentDB;
 }
 )
