@@ -1,28 +1,78 @@
 "use client"
 import { Button } from "@/components/ui/button";
+import { RunStatus } from "@/service/GlobalApi";
 import axios from "axios";
 import { Loader2, Search, Settings } from "lucide-react";
 import React, { useState } from "react";
+import ContentDisplay from "./_components/ContentDisplay";
+import { StaticImport } from "next/dist/shared/lib/get-img-props";
+
+export type Content={
+  id:number,
+  userInput:string;
+  content:subContent
+  thumbnailUrl:string,
+  createdOn:string
+}
+
+export type subContent={
+    thumbnailUrl: string | StaticImport;
+  description:string,
+  image_prompts:any,
+  tags:[],
+titles:[{
+  seo_score:number,
+  title:string
+  }]
+}
 
 function AiContentGenerator() {
     const[userInput,setUserInput]=useState<string>();
     const[loading,setLoading]=useState(false);
-    const onGenerate=async ()=>{
-      
-      try{
-      setLoading(true);
-      const result=await axios.post('/api/ai-content-generator',{
-          userInput:userInput
-        })
-        setLoading(false);
+    const[content,setContent]=useState<Content>();
+const onGenerate = async () => {
+  if (!userInput) return;
+  setLoading(true);
 
-        console.log(result.data);
+  try {
+    const result = await axios.post('/api/ai-content-generator', { userInput });
+    const runId = result.data.runId;  // use the correct runId returned by API
+    console.log("Run ID:", runId);
+
+    let runData = null;
+    let retries = 0;
+
+    while (retries < 30) {  // poll max 30 times
+      const runStatus = await RunStatus(runId);  // <-- use runId here
+      if (!runStatus) break;
+
+      if (runStatus.status === "Completed") {
+        runData = runStatus.data; // adjust if your API nests it differently
+        break;
+      }
+
+      if (["Cancelled", "Failed"].includes(runStatus.status)) {
+        alert("Thumbnail generation was cancelled or failed.");
+        break;
+      }
+
+      await new Promise(r => setTimeout(r, 1000));
+      retries++;
     }
-    catch(e){
-setLoading(false);
-console.log(e);
+
+    if (runData) {
+      console.log("Run data:", runData);
+      setContent(runData);
+    } else {
+      console.warn("No run data received");
     }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
   }
+};
+
     return (
         <div>
               <div className="px-10 md:px-20 lg:px-40">
@@ -47,8 +97,14 @@ console.log(e);
           </Button>
         </div>
       </div>
-        </div>
+      {/*@ts-ignore*/}
+      <ContentDisplay content={content} loading={loading}/>
+      </div>
     )
 }
 
 export default AiContentGenerator;
+function setOutputThumbnailImage(output: any) {
+  throw new Error("Function not implemented.");
+}
+
